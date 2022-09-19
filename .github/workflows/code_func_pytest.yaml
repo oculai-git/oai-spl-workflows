@@ -1,0 +1,24 @@
+name: Python Pytest
+
+on: workflow_call
+
+jobs:
+  pytest:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Code Checkout
+        uses: actions/checkout@v3
+
+      - name: Install Dependencies
+        run: |
+          pip3 install -r requirements.txt
+          pip3 install pytest==7.0.0
+          pip3 install coverage==6.3.2
+
+      - name: Check Pytest Version
+        run: echo "Implement me!"
+
+      - name: Run Tests
+        run: |
+          coverage run -m --source=src/ --omit=*__init__.py pytest tests/
+          coverage report -m

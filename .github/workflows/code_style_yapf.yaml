@@ -1,0 +1,18 @@
+name: Python Formatting Validation
+
+on: workflow_call
+
+jobs:
+  yapf:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Code Checkout
+        uses: actions/checkout@v3
+
+      - name: Install Yapf
+        run: |
+          pip3 install yapf==0.32.0
+
+      - name: Check Formatting
+        run: |
+          python3 -m yapf --recursive --diff . --style='{column_limit: 120}'

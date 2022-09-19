@@ -1,0 +1,49 @@
+name: Commit validation
+
+on: workflow_call
+
+jobs:
+  name_check:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Code Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          ref: '${{ github.event.pull_request.base.ref }}'
+      
+      - name: Commit validation
+        run: |
+          git checkout -q ${{ github.event.pull_request.head.ref }}
+          BASE_BRANCH=${{ github.event.pull_request.base.ref }}
+          msg_regex='^(build|ci|docs|feat|fix|perf|refactor|revert|style|test|chore)(\((\S+\s*)+\))?: \S+|Merge \S+|Revert "|Apply'
+          
+          invalidCommit=false
+          CURRENT_BRANCH=$(git branch | grep ^\* | cut -d "*" -f 2 | cut -d " " -f 2)
+          BRANCH_MERGE_BASE=$(git merge-base ${BASE_BRANCH} ${CURRENT_BRANCH})
+
+          echo "Current branch is: " $CURRENT_BRANCH
+          echo "Branch merge base hash is: " $BRANCH_MERGE_BASE
+
+          BRANCH_COMMITS=$(git rev-list ${BRANCH_MERGE_BASE}..HEAD)
+
+          echo $BRANCH_COMMITS
+
+          for commit in $BRANCH_COMMITS; do
+              if git log --max-count=1 --format=%B $commit | tr '[a-z]' '[A-Z]' | grep -iqE "$msg_regex"; then
+                  :
+              else
+                  echo "************"
+                  printf "Invalid commit message: \"%s\" and hash: %s\n" "$(git log --max-count=1 --format=%B $commit)" "$commit"
+                  echo "************"
+                  invalidCommit=true
+              fi
+          done
+
+          if [ "$invalidCommit" == true ]; then
+              echo "Invalid commits detected: https://help.github.com/en/articles/changing-a-commit-message"
+              exit 1
+          elif [ "$invalidCommit" == false ]; then
+              echo "All commits are valid."
+              exit 0
+          fi

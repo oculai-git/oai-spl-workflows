@@ -1,0 +1,24 @@
+name: Git Branch Validation
+
+on: workflow_call
+
+jobs:
+  branch-val:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Code Checkout
+        uses: actions/checkout@v3
+      
+      - name: Branch Validation
+        run: |
+          CURRENT_BRANCH=${{ github.event.pull_request.head.ref }}
+          COMMIT_REGEXP="^\d{1,}\-.*|^master$|^main$"
+
+          echo "Current branch is:" "$CURRENT_BRANCH"
+
+          if echo "$CURRENT_BRANCH" | grep -iqP "$COMMIT_REGEXP"; then
+              exit 0
+          else
+              printf "Invalid branch name: \"%s\"" "$CURRENT_BRANCH"
+              exit 1
+          fi
